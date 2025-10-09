@@ -1,0 +1,31 @@
+---
+import ContentBlock from "./ContentBlock.astro";
+/**
+ * you will have more payload components rendering imported here ....
+ */
+
+const componentMap = {
+  contentBlock: ContentBlock,
+  /**
+   * add more payload components here ....
+   */
+} as const;
+
+const { layoutBlocks } = Astro.props;
+---
+
+{
+  layoutBlocks.map((block: any) => {
+    if (!block.blockType) {
+      console.warn(`No block found`);
+      return null;
+    }
+    const blockType = block.blockType as keyof typeof componentMap;
+    const Component = componentMap[blockType] as any;
+    if (!Component) {
+      console.warn(`No component found for block type: ${block.blockType}`);
+      return null;
+    }
+    return <Component block={block} />;
+  })
+}

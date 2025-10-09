@@ -1,0 +1,49 @@
+---
+export const prerender = false;
+import Layout from "../layouts/Layout.astro";
+import RenderBlocks from "../components/RenderPayloadBlocks.astro";
+import { fetchDoc } from "../utils/payLoadAPICalls";
+
+//http://localhost:4321/next/preview?slug=about&collection=pages&path=%2Fabout&lang=ar
+const searchParams = Astro.url.searchParams;
+const ASTRO_ENV = Astro.locals.runtime?.env;
+const slug = (searchParams.get("slug") || "")
+  .replace(/^\/+|\/+$/g, "")
+  .replace(/%2F/g, "/");
+const collection = searchParams.get("collection") || "";
+const path = searchParams.get("path") || "";
+const lang = searchParams.get("lang") || "";
+
+console.log(slug, collection, path, lang);
+const docs = await fetchDoc(slug, lang, collection, ASTRO_ENV);
+
+const { layout: layoutBlocks, meta: seo } = docs.docs[0];
+---
+
+{
+  (() => {
+    try {
+      // Safe rendering with additional checks
+
+      return (
+        <Layout lang={lang} seo={seo}>
+          <RenderBlocks layoutBlocks={layoutBlocks} />
+        </Layout>
+      );
+    } catch (renderError) {
+      console.error("SSR: Critical rendering error:", renderError);
+      // Emergency fallback - this should never happen but provides safety
+      return (
+        <Layout
+          lang={lang}
+          seo={{ title: "Error", description: "Page temporarily unavailable" }}
+        >
+          <div class="error-fallback">
+            <h1>Content Temporarily Unavailable</h1>
+            <p>Please try again later.</p>
+          </div>
+        </Layout>
+      );
+    }
+  })()
+}
